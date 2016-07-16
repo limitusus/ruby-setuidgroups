@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'etc'
+
+if ARGV.size < 2 then
+  print "usage: setuidgroups username child\n"
+  exit 1
+end
+
+username = ARGV[0]
+cmd = ARGV[1..-1]
+
+user = Etc.getpwnam(username)
+uid = user.uid
+gid = user.gid
+
+supp_gids = [gid]
+
+Etc.group { |gr|
+  if gr.mem.include?(username) then
+    supp_gids << gr.gid
+  end
+}
+
+Process.gid = gid
+Process.egid = gid
+Process.groups = supp_gids
+Process.uid = uid
+Process.euid = uid
+
+Process.exec(*cmd)
